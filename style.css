@@ -279,3 +279,36 @@ h1 {
 .label{
     font-size: 14px;
 }
+
+/* Historical tab components */
+.demo-controls {
+    margin: 15px 0;
+    padding: 10px;
+    background: #f0f0f0;
+    border-radius: 5px;
+}
+
+.demo-btn {
+    background: #FF6347;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-right: 10px;
+}
+
+.demo-btn:hover {
+    background: #FF4500;
+}
+
+
+.slider-container {
+    margin: 20px 0;
+}
+
+#sliderYears {
+    width: 300px;
+    margin: 0 10px;
+}
