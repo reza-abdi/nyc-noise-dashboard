@@ -43,3 +43,26 @@ h1 {
 .tabcontent {
     padding: 20px;
 }
+
+/* General Dashboard components (containers, dropdowns, etc.) */
+
+.container {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+#dropdownBlockPredictive, #dropdownBlockHistorical {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 400px;
+}
+
+.dropdown {
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 100%;
+}
