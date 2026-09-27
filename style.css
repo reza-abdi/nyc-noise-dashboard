@@ -1,0 +1,45 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+h1 {
+    margin: 0 0 20px 0;
+}
+
+/* Top of page, tabs, etc. */ 
+.topOfPage {
+    background: linear-gradient(135deg, #2F4F4F 0%, #4682B4 100%);
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+.tab {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.tablinks {
+    background-color: #708090;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+.tablinks:hover {
+    background-color: #5F9EA0;
+}
+
+.tablinks.active {
+    background-color: #FF6347;
+}
+
+.tabcontent {
+    padding: 20px;
+}
