@@ -37,6 +37,59 @@
   </div>
 
   <div class="tabcontent" id="predictiveTabContent">
+    
+    <div id="model-details-text">
+        <p>Loading model overview...</p>
+    </div>
+
+    <h2>Predictions: Complaint Counts (by Month and Complaint Types)</h2>
+    
+    <div id="dropdownBlockPredictive">
+      <select class="dropdown" id="modelDropdown">
+        <option value="Base" selected>Baseline Model</option>
+        <option value="Event Permit">Event Permit Model</option>
+        <option value="Active Work Counts">Active Work Counts Model</option>
+        <option value="Average Linear Feet">Street Construction Size Model</option>
+        <option value="All Datasets">Ensemble Model</option>
+      </select>
+      <select multiple 
+              class="dropdown" 
+              id="monthDropdownPredictive"
+              multiselect-search="true"
+              multiselect-select-all="true"
+              multiselect-max-items="3"
+              placeholder="Select Months">
+        <option selected value="January">January</option>
+        <option value="February">February</option>
+        <option value="March">March</option>
+        <option value="April">April</option>
+        <option value="May">May</option>
+        <option value="June">June</option>
+        <option value="July">July</option>
+        <option value="August">August</option>
+        <option value="September">September</option>
+        <option value="October">October</option>
+        <option value="November">November</option>
+        <option value="December">December</option>
+      </select>
+      <select multiple 
+              class="dropdown" 
+              id="complaintTypeDropdownPredictive"
+              multiselect-search="true"
+              multiselect-select-all="true"
+              multiselect-max-items="3"
+              placeholder="Select Complaint Types">
+        <option selected value="Noise">General/Unspecified</option>
+        <option value="Noise - Commercial">Commercial</option>
+        <option value="Noise - Helicopter">Helicopter</option>
+        <option value="Noise - House of Worship">House of Worship</option>
+        <option value="Noise - Park">Park</option>
+        <option value="Noise - Residential">Residential</option>
+        <option value="Noise - Street/Sidewalk">Street/Sidewalk</option>
+        <option value="Noise - Vehicle">Vehicle</option>
+        <option value="Collection Truck Noise">Collection Truck</option>
+        </select>
+    </div>
   </div>
 
   <div class="tabcontent" id="historicalTabContent" style="display:none">
