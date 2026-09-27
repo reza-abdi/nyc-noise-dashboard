@@ -191,6 +191,30 @@
         <option value="2024"></option>
       </datalist>
     </div>
+    <div class="container">
+      <div class="map-container" id="historical-map-container">
+        <svg id="historicalChoropleth" width="100%" height="600"></svg>
+        <div id="historicalInfo" style="display:none;"></div>
+
+      </div>
+      <div class="stats-container">
+        <div class="total-count-box">
+          <div class="total-count-label">Total Complaints for <span id="selectedYear">2014</span><br>(based on current selections)</div>
+          <div class="total-count-number" id="totalCountHistorical">0</div>
+        </div>
+        <div class="chart-container">
+          <div class="chart-title">Yearly Trend for Complaints (Selected Types and Months)</div>
+          <svg id="lineChartHistorical" width="100%" height="300"></svg>
+        </div>
+        <div class="top-boards-container" id="topBoardsContainerHistorical">
+          <div class="top-boards-title">Top 5 Community Boards</div>
+          <ul class="board-list" id="topBoardsHistorical"></ul>
+        </div>
+      </div>
+    </div>
+    <div style="text-align: center; margin-top: 20px; color: #666; font-size: 14px;">
+      311 data as of 10/14/2025
+    </div>
   </div>
 </body>
 </html>
