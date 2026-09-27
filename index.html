@@ -116,6 +116,81 @@
   </div>
 
   <div class="tabcontent" id="historicalTabContent" style="display:none">
+    
+    <h2>Project Background</h2>
+    <div id="overview-text">
+        <p>Loading overview...</p>
+    </div>
+
+    <div class="demo-controls">
+      <strong>Learn More at:</strong>
+      <button class="demo-btn" onclick="window.open('https://portal.311.nyc.gov/', '_blank')">NYC 311 Portal</button>
+      <button class="demo-btn" onclick="window.open('https://opendata.cityofnewyork.us/', '_blank')">NYC Open Data</button>
+    </div>
+
+    <h2>Exploring Historical Noise Complaint Data</h2>
+    
+    <div id="dropdownBlockHistorical">
+      <div class="custom-multiselect" id="monthMultiselectHistorical" data-placeholder="Select Months"></div>
+      <select multiple 
+              class="dropdown"
+              id="monthDropdownHistorical"
+              multiselect-search="true"
+              multiselect-select-all="true"
+              multiselect-max-items="3"
+              placeholder="Select Months"
+              style="display:none;">
+        <option selected value="January">January</option>
+        <option value="February">February</option>
+        <option value="March">March</option>
+        <option value="April">April</option>
+        <option value="May">May</option>
+        <option value="June">June</option>
+        <option value="July">July</option>
+        <option value="August">August</option>
+        <option value="September">September</option>
+        <option value="October">October</option>
+        <option value="November">November</option>
+        <option value="December">December</option>
+      </select>
+      <div class="custom-multiselect" id="complaintTypeMultiselectHistorical" data-placeholder="Select Complaint Types"></div>
+      <select multiple 
+              class="dropdown"
+              id="complaintTypeDropdownHistorical"
+              multiselect-search="true"
+              multiselect-select-all="true"
+              multiselect-max-items="3"
+              placeholder="Select Complaint Types"
+              style="display:none;" >
+        <option selected value="Noise">General/Unspecified</option>
+        <option value="Noise - Commercial">Commercial</option>
+        <option value="Noise - Helicopter">Helicopter</option>
+        <option value="Noise - House of Worship">House of Worship</option>
+        <option value="Noise - Park">Park</option>
+        <option value="Noise - Residential">Residential</option>
+        <option value="Noise - Street/Sidewalk">Street/Sidewalk</option>
+        <option value="Noise - Vehicle">Vehicle</option>
+        <option value="Collection Truck Noise">Collection Truck</option>
+      </select>
+    </div>
+    <div class="slider-container">
+      <label for="sliderYears">Choose a year:</label><br />
+      2014<input type="range" id="sliderYears" name="testing" value="2014" min="2014" max="2024" step="1" list="stepList"/>2024
+      <span id="yearDisplay" style="margin-left: 10px; font-weight: bold;">2014</span>
+      <datalist id="stepList">
+        <option value="2014"></option>
+        <option value="2015"></option>
+        <option value="2016"></option>
+        <option value="2017"></option>
+        <option value="2018"></option>
+        <option value="2019"></option>
+        <option value="2020"></option>
+        <option value="2021"></option>
+        <option value="2022"></option>
+        <option value="2023"></option>
+        <option value="2024"></option>
+      </datalist>
+    </div>
   </div>
 </body>
 </html>
