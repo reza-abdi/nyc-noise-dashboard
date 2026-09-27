@@ -1,0 +1,27 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Editors
+.idea/
+.vscode/
+
+# Raw and intermediate datasets
+311_Service_Requests_Combined.csv
+data/311_Service_Requests_Combined.csv
+data/event_permit_full_date_only.csv
+data/WIP_street_construction_permits.csv
+data/WIP_street_construction_permits_with_cd.csv
+data/monthly_active_work_counts.csv
+data/monthly_average_linearfeet.csv
+WIP/*.csv
+WIP/*.geojson
