@@ -1,0 +1,72 @@
+﻿BoroCD,Community Board,Description
+101,01 MANHATTAN,"Tribeca, Seaport/Civic Center, Financial District, Battery Park City"
+102,02 MANHATTAN,"Greenwich Village, West Village, NoHo, SoHo, Lower East Side, Chinatown, Little Italy"
+103,03 MANHATTAN,"Tompkins Square, East Village, Lower East Side, Chinatown, Two Bridges"
+104,04 MANHATTAN,"Clinton, Chelsea"
+105,05 MANHATTAN,Midtown
+106,06 MANHATTAN,"Stuyvesant Town, Tudor City, Turtle Bay, Peter Cooper Village, Murray Hill, Gramercy Park, Kips Bay, Sutton Place"
+107,07 MANHATTAN,"Manhattan Valley, Upper West Side, and Lincoln Square"
+108,08 MANHATTAN,"Upper East Side, LenoxHill, Yorkville, and Roosevelt Island"
+109,09 MANHATTAN,"Hamilton Heights, Manhattanville, Morningside Heights, and West Harlem"
+110,10 MANHATTAN,Central Harlem
+111,11 MANHATTAN,East Harlem
+112,12 MANHATTAN,Washington Heights
+164,64 MANHATTAN,Central Park
+201,01 BRONX,"Mott Haven, Port Morris, and Melrose"
+202,02 BRONX,"Hunts Point, Longwood, and Morrisania"
+203,03 BRONX,"Crotona Park, Claremont Village, Concourse Village, Woodstock, and Morrisania"
+204,04 BRONX,"HighBridge, Concourse, Mt. Eden, and Concourse Village"
+205,05 BRONX,"Fordham, University Heights, Morris Heights, Bathgate, and Mount Hope"
+206,06 BRONX,"Belmont, Bathgate, West Farms, and E Tremont"
+207,07 BRONX,"Bedford Park, Fordham,  Jerome Park, Kingsbridge Heights,  Mosholu Parkway,  Norwood,  University Heights"
+208,08 BRONX,"Fieldston, Kingsbridge, Kingsbridge Heights, Marble Hill, Riverdale, Spuyten Duyvil, and Van Cortlandt Village"
+209,09 BRONX,"Parkchester, Westchester Square, Unionport, Soundview, Castle Hill, Bruckner, Harding Park, and Clason Point"
+210,10 BRONX,"Co-op City, City Island, Spencer Estates, Throgs Neck, Country Club, Zerega, Westchester Square, Pelham Bay Park, Eastchester Bay, Schuylerville, Edgewater, Locust Point, and Silver Beach"
+211,11 BRONX,"Morris Park, Pelham Parkway, Pelham Gardens, Allerton, Bronxdale, Laconia and Van Nest"
+212,12 BRONX,"Edenwald, Wakefield, Williamsbridge, Woodlawn, Norwood, Fish Bay, Eastchester, Olinville, and Baychester"
+226,26 BRONX,Van Cortlandt Park
+227,27 BRONX,Bronx Park
+228,28 BRONX,Pelham Bay Park
+301,01 BROOKLYN,"Flushing Avenue, Williamsburg, Greenpoint, Northside, and Southside"
+302,02 BROOKLYN,"Brooklyn Heights, Fulton Mall, Boerum Hill, Fort Greene, Brooklyn Navy Yard, Fulton Ferry, and Clinton Hill"
+303,03 BROOKLYN,"Bedford-Stuyvesant, Stuyvesant Heights, and Ocean Hill"
+304,04 BROOKLYN,Bushwick
+305,05 BROOKLYN,"East New York, Cypress Hills, Highland Park, New Lots, City Line, Starrett City, and Ridgewood"
+306,06 BROOKLYN,"Red Hook, Carroll Gardens, Park Slope, Gowanus, and Cobble Hill"
+307,07 BROOKLYN,Sunset Park and Windsor Terrace
+308,08 BROOKLYN,"Crown Heights, Prospect Heights, and Weeksville"
+309,09 BROOKLYN,"Crown Heights, Prospect Lefferts Gardens, and Wingate"
+310,10 BROOKLYN,"Bay Ridge, Dyker Heights, and Fort Hamilton"
+311,11 BROOKLYN,"Bath Beach, Gravesend, Mapleton, and Bensonhurst"
+312,12 BROOKLYN,"Boro Park, Kensington, Ocean Parkway, and Midwood"
+313,13 BROOKLYN,"Coney Island, Brighton Beach, Bensonhurst, Gravesend, and Seagate"
+314,14 BROOKLYN,"Flatbush, Midwood, Kensington, and Ocean Parkway"
+315,15 BROOKLYN,"Sheepshead Bay, Manhattan Beach, Kings Bay, Gerritsen Beach, Kings Highway, East Gravesend, Madison, Homecrest, and Plum Beach"
+316,16 BROOKLYN,Brownsville and Ocean Hill
+317,17 BROOKLYN,"East Flatbush, Remsen Village, Farragut, Rugby, Erasmus and Ditmas Village"
+318,18 BROOKLYN,"Canarsie, Bergen Beach, Mill Basin, Flatlands, Marine Park, Georgetown, and Mill Island"
+355,55 BROOKLYN,Prospect Park
+356,56 BROOKLYN,Gateway National Recreation Area
+401,01 QUEENS,"Astoria, Old Astoria, Long Island City, Queensbridge, Ditmars, Ravenswood, Steinway, Garden Bay, and Woodside"
+402,02 QUEENS,"Long Island City, Woodside, and Sunnyside"
+403,03 QUEENS,"Jackson Heights, East Elmhurst, North Corona, and La Guardia Airport"
+404,04 QUEENS,"Corona, Corona Heights, Elmhurst, and Newtown"
+405,05 QUEENS,"Ridgewood, Glendale, Middle Village, Maspeth, and Liberty Park"
+406,06 QUEENS,Forest Hills and Rego Park
+407,07 QUEENS,"Flushing, Bay Terrace, College Point, Whitestone, Malba, Beechhurst, Queensboro Hill, and Willets Point"
+408,08 QUEENS,"Fresh Meadows, Cunningham Heights, Hilltop Village, Pomonak Houses, Fresh Meadows, Jamaica Estates, Holliswood, Flushing South, Utopia, Kew Gardens Hills, and Briarwood"
+409,09 QUEENS,"Richmond Hill, Woodhaven, Ozone Park, and Kew Gardens"
+410,10 QUEENS,"Howard Beach, Ozone Park, South Ozone Park, Richmond Hill, Tudor Village, and Lindenwood"
+411,11 QUEENS,"Bayside, Douglaston, Little Neck, Auburndale, East Flushing, Oakland Gardens, and Hollis Hills"
+412,12 QUEENS,"Jamaica, Hollis, St. Albans, Springfield Gardens, Baisley Park, Rochdale Village, and South Jamaica"
+413,13 QUEENS,"Queens Village, Glen Oaks, New Hyde Park, Bellerose, Cambria Heights, Laurelton, Rosedale, Floral Park, and Brookville"
+414,14 QUEENS,"Breezy Point, Belle Harbor, Broad Channel, Neponsit, Arverne, Bayswater, Edgemere, Rockaway Park, Rockaway and Far Rockaway"
+480,80 QUEENS,LaGaurdia Airport
+481,81 QUEENS,Flushing Meadow Corona Park
+482,82 QUEENS,Forest Park
+483,83 QUEENS,John F Kennedy Airport
+484,84 QUEENS,Gateway National Recreation Area
+501,01 STATEN ISLAND,"Arlington, Castleton Corners, Clifton, Concord, Elm Park, Fort Wadsworth, Graniteville, Grymes Hill, Livingston, Mariners Harbor, Meiers Corners, New Brighton, Port Ivory, Port Richmond, Randall Manor, Rosebank, St. George, Shore Acres, Silver Lake, Stapleton, Sunnyside, Tompkinsville, West Brighton, Westerleigh"
+502,02 STATEN ISLAND,"Arrochar, Bloomfield, Bulls Heads, Chelsea, Dongan Hills, Egbertville, Emerson Hill, Grant City, Grasmere, High Rock, Lighthouse Hill, Midland Beach, New Dorp, New Springville, Oakwood, Ocean Breeze, Old Town, Richmondtown, South Beach, Todt Hill, and Travis"
+503,03 STATEN ISLAND,"Annadale, Arden Heights, Bay Terrace, Charleston, Eltingville, Great Kills, Greenridge, Huguenot, Pleasant Plains, Prince's Bay, Richmondtown, Richmond Valley, Rossville, Tottenville, and Woodrow"
+595,95 STATEN ISLAND,Gateway National Recreation Area
