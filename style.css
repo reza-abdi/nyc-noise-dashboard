@@ -230,3 +230,52 @@ h1 {
     color: #FF0000;
     font-size: 18px;
 }
+
+.tooltip {
+    position: absolute;
+    background: white;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    max-width: 300px;
+    z-index: 1000;
+}
+
+/* I didn't want to mess up the pie chart demo so these are pretty similar to the legend equivalents above */
+.tooltip-title{
+    margin: 5px 0;
+    font-size: 16px;
+    font-weight: bold;
+    align-items: center;  
+}
+
+.tooltip-info-general{
+    margin: 5px 0;
+    font-size: 14px;
+}
+
+.tooltip-item {
+    display: flex;
+    align-items: center;
+    margin: 5px 0;
+    font-size: 12px;
+}
+
+.tooltip-complaintType {
+    flex: 1;
+    color: #2F4F4F;
+}
+
+.tooltip-complaintTypeNum {
+    font-weight: bold;
+    color: #FF4500;
+}
+
+/* legend in Choropleth maps */
+.legendTitle{
+    font-size: 16px;
+    font-weight: bold;
+}
+.label{
+    font-size: 14px;
+}
