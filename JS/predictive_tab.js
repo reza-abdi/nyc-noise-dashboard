@@ -425,3 +425,26 @@ function updateMonthOverMonth(scales) {
     svg.select("#y-axis-MoM")
         .call(yAxis);
 };
+
+// Updates the top 5 community boards whenever a user changes input
+function updateTopBoardsPredictive() {
+    const filteredComplaintCounts = predComplaintCountsData.filter(d => (selectedModel === d.model && selectedComplaintTypesPred.includes(d.complaintType) && selectedMonthsPred.includes(d.month)));
+    const groupedComplaintCounts = filteredComplaintCounts.reduce((accumulator, currentItem) => {
+        itemCommunityBoard = currentItem.communityBoard;
+        itemNumComplaints = currentItem.numComplaints;
+        // if complaint type doesn't exist in accumulator, initialize it
+        if (!accumulator[itemCommunityBoard]) {
+            accumulator[itemCommunityBoard] = 0;
+        }
+        accumulator[itemCommunityBoard] += itemNumComplaints;
+        return accumulator;
+    }, {});
+    const topFiveBoards = Object.entries(groupedComplaintCounts).sort((a, b) => b[1] - a[1]).slice(0, 5)
+    const topFiveBoardsHTML = topFiveBoards.map(([key, value]) => {
+        return `<li class="board-item">
+          <span class="board-name">${key.toProperCase()}</span>
+          <span class="board-count">${value.toLocaleString()}</span>
+        </li>`
+    }).join("");
+    document.getElementById("topBoardsPredictive").innerHTML = topFiveBoardsHTML;
+};
