@@ -264,3 +264,48 @@ function constructMonthOverMonth() {
         line
     };
 };
+
+// helper function to get the color of a BoroCD in choropleth
+// BoroCD: the community district BoroCD we are getting the color for
+function getColor(BoroCD) {
+    // get the value of the number of incidents for the country and year
+    const filteredComplaintCounts = predComplaintCountsData.filter(d => (selectedModel === d.model && d.BoroCD == BoroCD && selectedComplaintTypesPred.includes(d.complaintType) && selectedMonthsPred.includes(d.month)));
+    // if there is no value, return white
+    if (filteredComplaintCounts.length === 0) {
+        return "white"
+    };
+    const boroCDComplaintCount = filteredComplaintCounts.reduce((accumulator, currentItem) => accumulator + currentItem.numComplaints, 0);
+    return color(boroCDComplaintCount);
+}
+
+// this function updates the Choropleth colors when a user's input changes
+function updateChoropleth() {
+    // update the fill value
+    d3.select("#communities")
+        .selectAll("path")
+        .attr("fill", d => getColor(d.properties.BoroCD));
+};
+
+// updates the color domain and legend whenever a user changes complaint types or months
+// this stays the same across models for easier comparison
+function updateColorDomainAndLegendPred(){
+    // update color domain
+    const filteredComplaintCounts = predComplaintCountsData.filter(d => (selectedComplaintTypesPred.includes(d.complaintType) && selectedMonthsPred.includes(d.month)));
+    const groupedComplaintCountsAllModels = d3.flatRollup(
+        filteredComplaintCounts,
+        v => d3.sum(v, d => d.numComplaints),
+        d => d.model,
+        d => d.BoroCD
+    ).map(d => d[2]);
+    color.domain(d3.extent(groupedComplaintCountsAllModels));
+
+    // update legend
+    const legendSequential = d3.legendColor()
+        .shapeWidth(40)
+        .cells(colorPalette.length)
+        .labelFormat(d3.format(",.1f")) // uses built-in D3
+        .title("Predicted Complaints")
+        .scale(color);
+    d3.select("#legendPredicted").call(legendSequential);
+
+}
