@@ -49,3 +49,50 @@ legendXY = {
     x: 20,
     y: 20
 }
+
+// tab functionality
+function openTab(event, tabContentName) {
+    // Get all elements with class="tabcontent" and hide them
+    var tabcontent = document.getElementsByClassName("tabcontent");
+    for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+    }
+
+    // Get all elements with class="tablinks" and remove the class "active"
+    var tablinks = document.getElementsByClassName("tablinks");
+    for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+
+    // Show current tab, add "active" class to the button that opened the tab
+    document.getElementById(tabContentName).style.display = "block";
+    event.currentTarget.className += " active";
+
+    // dispatch custom event
+    window.dispatchEvent(new CustomEvent("tabChanged", {
+        detail: {
+            tab: tabContentName
+        }
+    }));
+}
+
+// used to put the name of the community district in proper case
+// https://stackoverflow.com/questions/196972/convert-string-to-title-case-with-javascript
+String.prototype.toProperCase = function() {
+    return this.replace(/\w\S*/g, function(txt) {
+        return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+    });
+};
+
+// Mappings between complaint type in 311 dataste and the value we're displaying on the FE
+const complaintTypeMappings = {
+    "Noise": "General/Unspecified",
+    "Noise - Commercial": "Commercial",
+    "Noise - Helicopter": "Helicopter",
+    "Noise - House of Worship": "House of Worship",
+    "Noise - Park": "Park",
+    "Noise - Residential": "Residential",
+    "Noise - Street/Sidewalk": "Street/Sidewalk",
+    "Noise - Vehicle": "Vehicle",
+    "Collection Truck Noise": "Collection Truck"
+}
