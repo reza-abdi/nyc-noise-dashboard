@@ -320,3 +320,56 @@ function updateColorDomainAndLegendHist() {
         .scale(colorHistorical);
     d3.select("#legendHistorical").call(legendScale);
 };
+
+// generates the HTML used in the tooltip when a user hovers over a CD in the choropleth
+function generateInfoHist() {
+    // Write CD name in proper case
+    let communityDistrict = historicalComplaintCountsData.filter(d => d.BoroCD == selectedBoroCDHist)[0].communityBoard.split(" ");
+    communityDistrict = communityDistrict.map(s => s.toProperCase()).join(" ");
+
+    const communityDistrictDescription = BoroCDLookupData.filter(d => d.BoroCD == selectedBoroCDHist)[0].description;
+
+    // Total Complaints
+    const filteredComplaintCounts = historicalComplaintCountsData.filter(d => (d.BoroCD == selectedBoroCDHist && selectedComplaintTypesHist.includes(d.complaintType) && selectedMonthsHist.includes(d.month) && d.year === selectedYear));
+    numComplaints = 0;
+    if (filteredComplaintCounts.length !== 0) {
+        numComplaints = filteredComplaintCounts.reduce((accumulator, currentItem) => accumulator + currentItem.numComplaints, 0);
+    }
+
+    // Complaint Counts based on Complaint Types
+    const groupedComplaintCounts = filteredComplaintCounts.reduce((accumulator, currentItem) => {
+        itemComplaintType = currentItem.complaintType;
+        itemNumComplaints = currentItem.numComplaints;
+        // if complaint type doesn't exist in accumulator, initialize it
+        if (!accumulator[itemComplaintType]) {
+            accumulator[itemComplaintType] = 0;
+        }
+        accumulator[itemComplaintType] += itemNumComplaints;
+        return accumulator;
+    }, {})
+
+    const complaintTypeHTML = Object.entries(groupedComplaintCounts).sort((a, b) => b[1] - a[1]).map(([key, value]) => {
+        return `<div class="tooltip-item">
+                    <span class="tooltip-complaintType">${complaintTypeMappings[key]}</span>
+                    <span class="tooltip-complaintTypeNum">${value.toLocaleString()}</span>
+                </div>`
+    }).join("");
+
+    // build HTML in the info section
+    let infoHTML = `<div class="tooltip-title">${communityDistrict}</div>
+              <div class="tooltip-info-general">
+                <strong>Key Neighborhoods or Landmarks:</strong> ${communityDistrictDescription} <br>
+                <strong>Total Complaints: </strong>${numComplaints.toLocaleString()}
+              </div>`;
+    infoHTML += complaintTypeHTML;
+    return infoHTML;
+};
+
+// Updates the total complaints KPI
+function updateHistCount() {
+    const selectedYearSpan = document.getElementById('selectedYear');
+    selectedYearSpan.textContent = selectedYear;
+    const filteredComplaintCounts = historicalComplaintCountsData.filter(d => (selectedComplaintTypesHist.includes(d.complaintType) && selectedMonthsHist.includes(d.month) && d.year === selectedYear));
+    const totalComplaints = filteredComplaintCounts.reduce((accumulator, currentItem) => accumulator + currentItem.numComplaints, 0);
+    document.getElementById("totalCountHistorical").textContent = totalComplaints.toLocaleString();
+};
