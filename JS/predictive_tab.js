@@ -360,3 +360,68 @@ function updatePredCount() {
     const totalComplaints = filteredComplaintCounts.reduce((accumulator, currentItem) => accumulator + currentItem.numComplaints, 0);
     document.getElementById("totalCountPredictive").textContent = totalComplaints.toLocaleString();
 };
+
+// updates the monthOverMonth line chart whenever a user changes input
+function updateMonthOverMonth(scales) {
+    const {
+        x,
+        y,
+        xAxis,
+        yAxis,
+        line
+    } = scales;
+
+    const svg = d3.select("#lineChartPredictive");
+    // update data we're filtering on
+    const filteredComplaintCounts = predComplaintCountsData.filter(d => (selectedModel === d.model && selectedComplaintTypesPred.includes(d.complaintType)));
+    const groupedComplaintCounts = filteredComplaintCounts.reduce((accumulator, currentItem) => {
+        itemMonth = currentItem.month;
+        itemNumComplaints = currentItem.numComplaints;
+        // if complaint type doesn't exist in accumulator, initialize it
+        if (!accumulator[itemMonth]) {
+            accumulator[itemMonth] = 0;
+        }
+        accumulator[itemMonth] += itemNumComplaints;
+        return accumulator;
+    }, {});
+    const complaintCountsByMonth = monthOrder.map((monthName, id) => ({
+        month: id,
+        count: groupedComplaintCounts[monthName] || 0
+    }))
+    // update new domain of the y-axis
+    y.domain([0, d3.max(complaintCountsByMonth, d => d.count)]);
+
+    // update line and point values
+    svg.select("#lineMoM")
+        .datum(complaintCountsByMonth)
+        .attr("d", line);
+
+    // bold the months that are selected
+    d3.select("#x-axis-MoM").selectAll("text")
+      .style("font-weight", d => selectedMonthsPred.includes(monthOrder[d]) ? "bold" : "normal")
+      .style("font-size", d => selectedMonthsPred.includes(monthOrder[d]) ? "14px" : "12px")
+      .style("fill", d => selectedMonthsPred.includes(monthOrder[d]) ? "#FF0000" : "#2F4F4F");
+
+    // update point values
+    const dots = svg.selectAll(".dot")
+        .data(complaintCountsByMonth);
+
+    // delete old dots
+    dots.exit().remove();
+
+    // add new dots
+    dots.enter()
+        .append("circle")
+        .attr("class", "dot")
+        .merge(dots) // merge entered and existing elements
+        .attr("cx", d => x(d.month))
+        .attr("cy", d => y(d.count))
+        .attr("r", 4)
+        .attr("r", d => (selectedMonthsPred.includes(monthOrder[d.month]) ? 6 : 4))
+        .attr("fill", d => (selectedMonthsPred.includes(monthOrder[d.month]) ? "#FF0000" : "#FF8C00"))
+        .attr("stroke-width", 2);
+
+    // update y-axis
+    svg.select("#y-axis-MoM")
+        .call(yAxis);
+};
