@@ -278,3 +278,45 @@ function drawYearOverYearChart() {
         line
     };
 };
+
+// helper function to get the color of a BoroCD
+function getColorHistorical(BoroCD) {
+    // get the value of the number of incidents for the country and year
+    const filteredComplaintCounts = historicalComplaintCountsData.filter(d => (d.BoroCD == BoroCD && selectedComplaintTypesHist.includes(d.complaintType) && selectedMonthsHist.includes(d.month) && d.year === selectedYear));
+    // if there is no value, return white
+    if (filteredComplaintCounts.length === 0) {
+        return "white"
+    };
+    boroCDComplaintCount = filteredComplaintCounts.reduce((accumulator, currentItem) => accumulator + currentItem.numComplaints, 0);
+    return colorHistorical(boroCDComplaintCount);
+};
+
+// updates the Choropleth colors when a user changes input values (based on existing legend)
+function updateHistoricalChoropleth() {
+    // update the fill value
+    d3.select("#historicalCommunities")
+        .selectAll("path")
+        .attr("fill", d => getColorHistorical(d.properties.BoroCD));
+};
+
+// update the color domain and legend of choropleth whenever a user changes dropdown values
+// should be the same across years for easier comparison
+function updateColorDomainAndLegendHist() {
+    // update color domain and legend (same across years)
+    const filteredComplaintCounts = historicalComplaintCountsData.filter(d => (selectedComplaintTypesHist.includes(d.complaintType) && selectedMonthsHist.includes(d.month)));
+    const groupedComplaintCountsAllYears = d3.flatRollup(
+        filteredComplaintCounts,
+        v => d3.sum(v, d => d.numComplaints),
+        d => d.year,
+        d => d.BoroCD
+    ).map(d => d[2]);
+    colorHistorical.domain(d3.extent(groupedComplaintCountsAllYears));
+
+    const legendScale = d3.legendColor()
+        .shapeWidth(40)
+        .cells(colorPalette.length)
+        .labelFormat(d3.format(",.0f"))
+        .title("Number of Complaints")
+        .scale(colorHistorical);
+    d3.select("#legendHistorical").call(legendScale);
+};
