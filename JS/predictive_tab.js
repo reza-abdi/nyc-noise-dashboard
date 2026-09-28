@@ -35,3 +35,81 @@ Promise.all([mapNYC, complaintCounts, boroLookup]).then(function(values) {
     // initialize the charts in the predictive tab
     initPredTab();
 });
+
+// this function should be called once the data from files have been read
+function initPredTab() {
+    // construct choropleth map
+    constructChoropleth();
+    // construct month over month visualization
+    const scales = constructMonthOverMonth();
+
+    // initial call to fill the map and pred count
+    updateColorDomainAndLegendPred();
+    updateChoropleth();
+    updatePredCount();
+    updateMonthOverMonth(scales);
+    updateTopBoardsPredictive();
+
+    // update charts if the user changes the model
+    const modelDropdown = d3.select("#modelDropdown")
+    modelDropdown.on("change", function(){
+        selectedModel = this.selectedOptions[0].value;
+        updateChoropleth();
+        updatePredCount();
+        updateMonthOverMonth(scales);
+        updateTopBoardsPredictive();
+    });
+
+    // update charts if user changes month or complaint type dropdown values
+    // NOTE: we're currently not changing month over month line chart if a user changes selected months
+    // if we add bold/highlighted behavior we can update that chart
+    const monthDropdown = d3.select("#monthDropdownPredictive")
+    monthDropdown.on("change", function() {
+        selectedMonthsPred = Array.from(this.selectedOptions).map(option => option.value);
+        updateColorDomainAndLegendPred();
+        updateChoropleth();
+        updatePredCount();
+        updateTopBoardsPredictive();
+        updateMonthOverMonth(scales); // the line shouldn't change, but selected months will
+    })
+    const complaintTypeDropdown = d3.select("#complaintTypeDropdownPredictive")
+    complaintTypeDropdown.on("change", function() {
+        selectedComplaintTypesPred = Array.from(this.selectedOptions).map(option => option.value);
+        updateColorDomainAndLegendPred();
+        updateChoropleth();
+        updatePredCount();
+        updateTopBoardsPredictive();
+        updateMonthOverMonth(scales);
+    })
+
+    // Hovering tooltip behavior on the Choropleth map
+    const tooltip = d3.select("#tooltipPred");
+    d3.select("#communities").selectAll("path")
+        .on("mouseover", function(event, d) {
+            // mute out the other community districts
+            d3.select("#communities").selectAll("path")
+                .style("stroke-width", "1px")
+                .style("opacity", "0.5");
+            // make selected community district clear
+            d3.select(this)
+                .style("stroke-width", "2px")
+                .style("opacity", "1");
+
+            selectedBoroCDPred = event.properties.BoroCD;
+            const eventInfo = d3.event;
+            // update and display tooltip
+            tooltipHTML = generateInfo();
+            tooltip
+                .style("display", "block")
+                .html(tooltipHTML)
+                .style("left", (eventInfo.pageX - 5) + "px")
+                .style("top", (eventInfo.pageY - 5) + "px");
+        })
+        .on("mouseout", function(event, d) {
+            d3.select("#communities").selectAll("path")
+                .style("stroke-width", "1px")
+                .style("opacity", "1");
+            d3.select("#info").style("display", "none")
+            tooltip.style("display", "none");
+        })
+};
