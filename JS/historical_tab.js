@@ -142,3 +142,39 @@ function constructHistoricalChoropleth() {
     // adds behavior upon hovering over a CD
     addTooltipBehavior();
 };
+
+// Adds behavior upon hovering over a CD
+// This needed to be separated out b/c we only construct the choropleth after we change to the historical tab
+// (cont.) and the mouseover event handlers were not getting reattached
+function addTooltipBehavior(){
+    // Hovering tooltip behavior on the Choropleth map
+    const tooltip = d3.select("#tooltipHist");
+    d3.select("#historicalCommunities").selectAll("path")
+        .on("mouseover", function(event, d) {
+            // mute out the other community districts
+            d3.select("#historicalCommunities").selectAll("path")
+                .style("stroke-width", "1px")
+                .style("opacity", "0.5");
+            // make selected community district clear
+            d3.select(this)
+                .style("stroke-width", "2px")
+                .style("opacity", "1");
+
+            selectedBoroCDHist = event.properties.BoroCD;
+            const eventInfo = d3.event;
+            // update and display tooltip
+            tooltipHTML = generateInfoHist();
+            tooltip
+                .style("display", "block")
+                .html(tooltipHTML)
+                .style("left", (eventInfo.pageX - 5) + "px")
+                .style("top", (eventInfo.pageY - 5) + "px");
+        })
+        .on("mouseout", function(event, d) {
+            d3.select("#historicalCommunities").selectAll("path")
+                .style("stroke-width", "1px")
+                .style("opacity", "1");
+            d3.select("#info").style("display", "none")
+            tooltip.style("display", "none");
+        })
+}
