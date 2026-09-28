@@ -26,6 +26,22 @@ var padding = {
     left: 10
 };
 
+// GLOBAL VARS FOR DATA
+let districtJSONData, historicalComplaintCountsData, predComplaintCountsData, BoroCDLookupData;
+
+// DATA: Community districts JSON
+var pathToJson = "data/NYC_community_districts.json"
+var mapNYC = d3.json(pathToJson);
+
+// DATA: lookup file to go from BoroCD to the community board
+var boroLookup = d3.dsv(",", "data/lookup_boroCD_community_board.csv", function(d) {
+    return {
+        BoroCD: d.BoroCD,
+        communityBoard: d["Community Board"],
+        description: d["Description"]
+    }
+})
+
 // Choropleth legend dimensions
 legendWidth = 215;
 legendHeight = 270;
