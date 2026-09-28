@@ -93,3 +93,52 @@ function initHistoricalTab() {
         document.getElementById('yearDisplay').textContent = selectedYear;
     })
 };
+
+// constructs initial choropleth
+function constructHistoricalChoropleth() {
+    // draw basic map outline
+    const choropleth = d3.select("#historicalChoropleth");
+    const mapWidth = parseInt(choropleth.style("width")) - padding.left - padding.right
+    projection.fitSize([mapWidth, mapWidth], districtJSONData);
+    // add margins to map
+    const mapHistorical = d3.select("#historicalChoropleth")
+        .attr("width", parseInt(choropleth.style("width")))
+        .attr("height", parseInt(choropleth.style("width")));
+    // this just draws the outline, fill attribute happens during updateHistoricalChoropleth function
+    mapHistorical.append("g")
+        .attr("transform", "translate(10, 10)")
+        .attr("id", "historicalCommunities")
+        .selectAll("path")
+        .data(districtJSONData.features)
+        .enter().append("path")
+        .attr("d", path)
+        .style("stroke", "black");
+
+    // create legend
+    const legend = d3.select("#historicalChoropleth");
+    legend.append("rect")
+        .attr("x", legendXY.x)
+        .attr("y", legendXY.y)
+        .attr("width", legendWidth)
+        .attr("height", legendHeight)
+        .style("fill", "white")
+        .style("stroke", "black")
+        .style("stroke-width", 1);
+    legend.append("g")
+        .attr("class", "legend")
+        .attr("id", "legendHistorical")
+        .attr("transform", "translate(30,50)");
+
+    // create tooltip
+    // needs to be off of the map-container div instead of choropleth svg to appear
+    const tooltip = d3.select("#historical-map-container")
+        .append("div")
+        .attr("class", "tooltip")
+        .attr("id", "tooltipHist")
+        .style("position", "absolute")
+        .style("display", "none")
+        .style("background", "#fff")
+        .style("pointer-events", "none");
+    // adds behavior upon hovering over a CD
+    addTooltipBehavior();
+};
