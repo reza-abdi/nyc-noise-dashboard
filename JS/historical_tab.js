@@ -373,3 +373,95 @@ function updateHistCount() {
     const totalComplaints = filteredComplaintCounts.reduce((accumulator, currentItem) => accumulator + currentItem.numComplaints, 0);
     document.getElementById("totalCountHistorical").textContent = totalComplaints.toLocaleString();
 };
+
+// Updates Yearly trend chart based on changing user input
+function updateYearOverYearChart(scales) {
+    const {
+        x,
+        y,
+        xAxis,
+        yAxis,
+        line
+    } = scales;
+
+    const svg = d3.select("#lineChartHistorical");
+    const selectedYearInt = parseInt(selectedYear);
+
+    const filteredComplaintCounts = historicalComplaintCountsData.filter(d => (selectedComplaintTypesHist.includes(d.complaintType) && selectedMonthsHist.includes(d.month)));
+    const groupedComplaintCounts = filteredComplaintCounts.reduce((accumulator, currentItem) => {
+        itemYear = currentItem.year;
+        itemNumComplaints = currentItem.numComplaints;
+        // if complaint type doesn't exist in accumulator, initialize it
+        if (!accumulator[itemYear]) {
+            accumulator[itemYear] = 0;
+        }
+        accumulator[itemYear] += itemNumComplaints;
+        return accumulator;
+    }, {});
+    // if there's no value for the month, just have it be 0
+    const complaintCountsByYear = years.map(year => ({
+        year,
+        count: groupedComplaintCounts[year] !== undefined ? groupedComplaintCounts[year] : 0
+    }));
+
+    // update which x-axis value is highlighted
+    svg.select("#x-axis-YoY").selectAll("text")
+        .style("font-weight", d => d === selectedYearInt ? "bold" : "normal")
+        .style("font-size", d => d === selectedYearInt ? "14px" : "12px")
+        .style("fill", d => d === selectedYearInt ? "#FF0000" : "#2F4F4F");
+
+    // update the domain of the y-axis
+    y.domain([0, d3.max(complaintCountsByYear, d => d.count)]);
+
+    // update the line and point values
+    svg.select("#lineYoY")
+        .datum(complaintCountsByYear)
+        .attr("d", line);
+
+    // update dot values
+    const dots = svg.selectAll(".dot")
+        .data(complaintCountsByYear);
+
+    // delete old dots
+    dots.exit().remove();
+
+    // add new dots
+    dots.enter()
+        .append("circle")
+        .attr("class", "dot")
+        .merge(dots)
+        .attr("cx", d => x(d.year))
+        .attr("cy", d => y(d.count))
+        .attr("r", d => (selectedYear && d.year === selectedYearInt) ? 6 : 4)
+        .attr("fill", d => (selectedYear && d.year === selectedYearInt) ? "#FF0000" : "#FF8C00")
+        .attr("stroke", "white")
+        .attr("stroke-width", 2);
+
+    // update y-axis
+    svg.select("#y-axis-YoY")
+        .call(yAxis);
+};
+
+
+// Updates the top five community boards based on user selection
+function updateTopBoardsHistorical() {
+    const filteredComplaintCounts = historicalComplaintCountsData.filter(d => (selectedComplaintTypesHist.includes(d.complaintType) && selectedMonthsHist.includes(d.month) && d.year === selectedYear));
+    const groupedComplaintCounts = filteredComplaintCounts.reduce((accumulator, currentItem) => {
+        itemCommunityBoard = currentItem.communityBoard;
+        itemNumComplaints = currentItem.numComplaints;
+        // if complaint type doesn't exist in accumulator, initialize it
+        if (!accumulator[itemCommunityBoard]) {
+            accumulator[itemCommunityBoard] = 0;
+        }
+        accumulator[itemCommunityBoard] += itemNumComplaints;
+        return accumulator;
+    }, {});
+    const topFiveBoards = Object.entries(groupedComplaintCounts).sort((a, b) => b[1] - a[1]).slice(0, 5)
+    const topFiveBoardsHTML = topFiveBoards.map(([key, value]) => {
+        return `<li class="board-item">
+          <span class="board-name">${key.toProperCase()}</span>
+          <span class="board-count">${value.toLocaleString()}</span>
+        </li>`
+    }).join("");
+    document.getElementById("topBoardsHistorical").innerHTML = topFiveBoardsHTML;
+};
