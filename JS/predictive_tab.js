@@ -162,3 +162,105 @@ function constructChoropleth() {
         .style("background", "#fff")
         .style("pointer-events", "none");
 };
+
+// Adapting original drawYearOverYear() function
+// creates the month over month line chart
+const monthOrder = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const monthAbbr = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function constructMonthOverMonth() {
+    const filteredComplaintCounts = predComplaintCountsData.filter(d => (selectedComplaintTypesPred.includes(d.complaintType) && selectedModel === d.model));
+    const groupedComplaintCounts = filteredComplaintCounts.reduce((accumulator, currentItem) => {
+        itemMonth = currentItem.month;
+        itemNumComplaints = currentItem.numComplaints;
+        // if complaint type doesn't exist in accumulator, initialize it
+        if (!accumulator[itemMonth]) {
+            accumulator[itemMonth] = 0;
+        }
+        accumulator[itemMonth] += itemNumComplaints;
+        return accumulator;
+    }, {});
+    // if there's no value for the month, just have it be 0
+    const complaintCountsByMonth = monthOrder.map((monthName, idx) => ({
+        month: idx,
+        count: groupedComplaintCounts[monthName] || 0
+    }))
+    // CONSIDER: do we want to hide the line chart if there's no data (every month is 0?)
+
+    const svg = d3.select("#lineChartPredictive");
+
+    const margin = {
+        top: 20,
+        right: 30,
+        bottom: 40,
+        left: 60
+    };
+    const width = parseInt(svg.style("width")) - margin.left - margin.right;
+    const height = parseInt(svg.attr("height")) - margin.top - margin.bottom;
+
+    const g = svg.append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    const x = d3.scaleLinear()
+        .domain([0, 11])
+        .range([0, width]);
+
+    const y = d3.scaleLinear()
+        .domain([0, d3.max(complaintCountsByMonth, d => d.count) * 1.1])
+        .nice()
+        .range([height, 0]);
+
+    const line = d3.line()
+        .x(d => x(d.month))
+        .y(d => y(d.count));
+
+    // X-axis
+    const xAxis = d3.axisBottom(x).tickFormat(d => monthAbbr[d]).ticks(12)
+    const xAxisGroup = g.append("g")
+        .attr("class", "x-axis")
+        .attr("id", "x-axis-MoM")
+        .attr("transform", `translate(0,${height})`)
+        .call(xAxis);
+
+    // bold the months that are selected
+    xAxisGroup.selectAll("text")
+      .style("font-weight", d => selectedMonthsPred.includes(monthOrder[d]) ? "bold" : "normal")
+      .style("font-size", d => selectedMonthsPred.includes(monthOrder[d]) ? "14px" : "12px")
+      .style("fill", d => selectedMonthsPred.includes(monthOrder[d]) ? "#FF0000" : "#2F4F4F");
+
+    // Y-axis
+    const yAxis = d3.axisLeft(y).ticks(5)
+    g.append("g")
+        .attr("class", "y-axis")
+        .attr("id", "y-axis-MoM")
+        .call(yAxis);
+
+    // Line with gradient color
+    g.append("path")
+        .attr("id", "lineMoM")
+        .datum(complaintCountsByMonth)
+        .attr("fill", "none")
+        .attr("stroke", "#FF6347")
+        .attr("stroke-width", 2.5)
+        .attr("d", line);
+
+    // Dots
+    g.selectAll(".dot")
+        .data(complaintCountsByMonth)
+        .enter().append("circle")
+        .attr("class", "dot")
+        .attr("cx", d => x(d.month))
+        .attr("cy", d => y(d.count))
+        .attr("r", d => (selectedMonthsPred.includes(monthOrder[d.month]) ? 6 : 4))
+        .attr("fill", d => (selectedMonthsPred.includes(monthOrder[d.month]) ? "#FF0000" : "#FF8C00"))
+        .attr("stroke", "white")
+        .attr("stroke-width", 2);
+
+    return {
+        x,
+        y,
+        xAxis,
+        yAxis,
+        line
+    };
+};
