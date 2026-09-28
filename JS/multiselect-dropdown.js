@@ -313,3 +313,98 @@ style.innerHTML = `
 .multiselect-dropdown-all-selector {border-bottom:solid 1px #999;}
 `;
 document.head.appendChild(style);
+
+function MultiselectDropdown(options) {
+  var config = {
+    search: true,
+    height: '15rem',
+    placeholder: 'select',
+    txtSelected: 'selected',
+    txtAll: 'All',
+    txtRemove: 'Remove',
+    txtSearch: 'search',
+    ...options
+  };
+
+  function newEl(tag, attrs) {
+    var e = document.createElement(tag);
+    if (attrs !== undefined) Object.keys(attrs).forEach(k => {
+      if (k === 'class') {
+        Array.isArray(attrs[k]) ? attrs[k].forEach(o => o !== '' ? e.classList.add(o) : 0) : (attrs[k] !== '' ? e.classList.add(attrs[k]) : 0)
+      } else if (k === 'style') {
+        Object.keys(attrs[k]).forEach(ks => {
+          e.style[ks] = attrs[k][ks];
+        });
+      } else if (k === 'text') {
+        attrs[k] === '' ? e.innerHTML = '&nbsp;' : e.innerText = attrs[k]
+      } else e[k] = attrs[k];
+    });
+    return e;
+  }
+
+
+  document.querySelectorAll("select[multiple]").forEach((el, k) => {
+
+    var div = newEl('div', {
+      class: 'multiselect-dropdown',
+      style: {
+        width: config.style?.width ?? el.clientWidth + 'px',
+        padding: config.style?.padding ?? ''
+      }
+    });
+    el.style.display = 'none';
+    el.parentNode.insertBefore(div, el.nextSibling);
+    var listWrap = newEl('div', {
+      class: 'multiselect-dropdown-list-wrapper'
+    });
+    var list = newEl('div', {
+      class: 'multiselect-dropdown-list',
+      style: {
+        height: config.height
+      }
+    });
+    var search = newEl('input', {
+      class: ['multiselect-dropdown-search'].concat([config.searchInput?.class ?? 'form-control']),
+      style: {
+        width: '100%',
+        display: el.attributes['multiselect-search']?.value === 'true' ? 'block' : 'none'
+      },
+      placeholder: config.txtSearch
+    });
+    listWrap.appendChild(search);
+    div.appendChild(listWrap);
+    listWrap.appendChild(list);
+
+    el.loadOptions = () => {
+      list.innerHTML = '';
+
+      Array.from(el.options).map(o => {
+        var op = newEl('div', {
+          class: o.selected ? 'checked' : '',
+          optEl: o
+        })
+        var ic = newEl('input', {
+          type: 'checkbox',
+          checked: o.selected
+        });
+        op.appendChild(ic);
+        op.appendChild(newEl('label', {
+          text: o.text
+        }));
+
+        op.addEventListener('click', () => {
+          op.classList.toggle('checked');
+          op.querySelector("input").checked = !op.querySelector("input").checked;
+          op.optEl.selected = !!!op.optEl.selected;
+          el.dispatchEvent(new Event('change'));
+        });
+        ic.addEventListener('click', (ev) => {
+          ic.checked = !ic.checked;
+        });
+        o.listitemEl = op;
+        list.appendChild(op);
+      });
+    }
+    el.loadOptions();
+  });
+}
