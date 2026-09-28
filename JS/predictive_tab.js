@@ -309,3 +309,54 @@ function updateColorDomainAndLegendPred(){
     d3.select("#legendPredicted").call(legendSequential);
 
 }
+
+// generates HTML for the tooltip if the user hovers over a CD in the choropleth
+function generateInfo() {
+    // Write CD name in proper case
+    let communityDistrict = predComplaintCountsData.filter(d => d.BoroCD == selectedBoroCDPred)[0].communityBoard.split(" ");
+    communityDistrict = communityDistrict.map(s => s.toProperCase()).join(" ");
+
+    const communityDistrictDescription = BoroCDLookupData.filter(d => d.BoroCD == selectedBoroCDPred)[0].description;
+
+    // Total Complaints
+    const filteredComplaintCounts = predComplaintCountsData.filter(d => (selectedModel === d.model && d.BoroCD == selectedBoroCDPred && selectedComplaintTypesPred.includes(d.complaintType) && selectedMonthsPred.includes(d.month)));
+    numComplaints = 0;
+    if (filteredComplaintCounts.length !== 0) {
+        numComplaints = filteredComplaintCounts.reduce((accumulator, currentItem) => accumulator + currentItem.numComplaints, 0);
+    }
+
+    // Complaint Counts based on Complaint Types
+    const groupedComplaintCounts = filteredComplaintCounts.reduce((accumulator, currentItem) => {
+        itemComplaintType = currentItem.complaintType;
+        itemNumComplaints = currentItem.numComplaints;
+        // if complaint type doesn't exist in accumulator, initialize it
+        if (!accumulator[itemComplaintType]) {
+            accumulator[itemComplaintType] = 0;
+        }
+        accumulator[itemComplaintType] += itemNumComplaints;
+        return accumulator;
+    }, {})
+
+    const complaintTypeHTML = Object.entries(groupedComplaintCounts).sort((a, b) => b[1] - a[1]).map(([key, value]) => {
+        return `<div class="tooltip-item">
+                    <span class="tooltip-complaintType">${complaintTypeMappings[key]}</span>
+                    <span class="tooltip-complaintTypeNum">${value.toLocaleString()}</span>
+                </div>`
+    }).join("");
+
+    // build HTML in the info section
+    let infoHTML = `<div class="tooltip-title">${communityDistrict}</div>
+              <div class="tooltip-info-general">
+                <strong>Key Neighborhoods or Landmarks:</strong> ${communityDistrictDescription} <br>
+                <strong>Total Predicted Complaints: </strong>${numComplaints.toLocaleString()}
+              </div>`;
+    infoHTML += complaintTypeHTML;
+    return infoHTML;
+};
+
+// updates the predictive count (single KPI card) whenever a user changes input
+function updatePredCount() {
+    const filteredComplaintCounts = predComplaintCountsData.filter(d => (selectedModel === d.model && selectedComplaintTypesPred.includes(d.complaintType) && selectedMonthsPred.includes(d.month)));
+    const totalComplaints = filteredComplaintCounts.reduce((accumulator, currentItem) => accumulator + currentItem.numComplaints, 0);
+    document.getElementById("totalCountPredictive").textContent = totalComplaints.toLocaleString();
+};
