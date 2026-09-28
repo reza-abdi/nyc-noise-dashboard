@@ -178,3 +178,103 @@ function addTooltipBehavior(){
             tooltip.style("display", "none");
         })
 }
+
+// Draw year-over-year line chart
+const years = [2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024];
+
+function drawYearOverYearChart() {
+    const selectedYearInt = parseInt(selectedYear)
+    const filteredComplaintCounts = historicalComplaintCountsData.filter(d => (selectedComplaintTypesHist.includes(d.complaintType) && selectedMonthsHist.includes(d.month)));
+    const groupedComplaintCounts = filteredComplaintCounts.reduce((accumulator, currentItem) => {
+        itemYear = currentItem.year;
+        itemNumComplaints = currentItem.numComplaints;
+        // if complaint type doesn't exist in accumulator, initialize it
+        if (!accumulator[itemYear]) {
+            accumulator[itemYear] = 0;
+        }
+        accumulator[itemYear] += itemNumComplaints;
+        return accumulator;
+    }, {});
+    // if there's no value for the month, just have it be 0
+    const complaintCountsByYear = years.map(year => ({
+        year,
+        count: groupedComplaintCounts[year] !== undefined ? groupedComplaintCounts[year] : 0
+    }));
+    const svg = d3.select("#lineChartHistorical");
+
+    const margin = {
+        top: 20,
+        right: 30,
+        bottom: 40,
+        left: 60
+    };
+    const width = parseInt(svg.style("width")) - margin.left - margin.right;
+    const height = parseInt(svg.attr("height")) - margin.top - margin.bottom;
+
+    const g = svg.append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    const x = d3.scaleLinear()
+        .domain([2014, 2024])
+        .range([0, width]);
+
+    const y = d3.scaleLinear()
+        .domain([0, d3.max(complaintCountsByYear, d => d.count) * 1.1])
+        .nice()
+        .range([height, 0]);
+
+    const line = d3.line()
+        .x(d => x(d.year))
+        .y(d => y(d.count));
+
+    // X-axis
+    const xAxis = d3.axisBottom(x).tickFormat(d3.format("d")).ticks(11)
+    const xAxisGroup = g.append("g")
+        .attr("class", "x-axis")
+        .attr("id", "x-axis-YoY")
+        .attr("transform", `translate(0,${height})`)
+        .call(xAxis);
+
+    // Bold the selected year
+    xAxisGroup.selectAll("text")
+        .style("font-weight", d => d === selectedYearInt ? "bold" : "normal")
+        .style("font-size", d => d === selectedYearInt ? "14px" : "12px")
+        .style("fill", d => d === selectedYearInt ? "#FF0000" : "#2F4F4F");
+
+    // Y-axis
+    const yAxis = d3.axisLeft(y).ticks(5)
+    g.append("g")
+        .attr("class", "y-axis")
+        .attr("id", "y-axis-YoY")
+        .call(yAxis);
+
+    // Line with gradient color
+    g.append("path")
+        .attr("id", "lineYoY")
+        .datum(complaintCountsByYear)
+        .attr("fill", "none")
+        .attr("stroke", "#FF6347")
+        .attr("stroke-width", 2.5)
+        .attr("d", line);
+
+    // Dots
+    // selected year is more prominent
+    g.selectAll(".dot")
+        .data(complaintCountsByYear)
+        .enter().append("circle")
+        .attr("class", "dot")
+        .attr("cx", d => x(d.year))
+        .attr("cy", d => y(d.count))
+        .attr("r", d => (selectedYear && d.year === selectedYearInt) ? 6 : 4)
+        .attr("fill", d => (selectedYear && d.year === selectedYearInt) ? "#FF0000" : "#FF8C00")
+        .attr("stroke", "white")
+        .attr("stroke-width", 2);
+
+    return {
+        x,
+        y,
+        xAxis,
+        yAxis,
+        line
+    };
+};
