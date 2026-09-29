@@ -159,3 +159,80 @@ def download_cd_geodata(cache_file='data/NYC_DCP_GeoJSON.geojson'):
         cd_gdf = cd_gdf[cd_gdf.geometry.type == 'Polygon'].reset_index(drop=True)
         cd_gdf['BoroCD'] = cd_gdf['BoroCD'].astype(int)
         return cd_gdf
+    
+
+def extract_geometry_info(wkt_string):
+    """
+    Extract geometry and basic info from WKT string.
+
+    Parameters:
+    -----------
+    wkt_string : str
+        WKT format geometry string (must be in EPSG:2263)
+        
+    Returns:
+    --------
+    tuple
+        (geometry object, geometry type string, num_points)
+    """
+    if pd.isna(wkt_string):
+        return None, None, 0
+    
+    try:
+        geom = wkt.loads(wkt_string)
+        
+        # Count points
+        if geom.geom_type == 'Point':
+            num_points = 1
+        elif geom.geom_type == 'LineString':
+            num_points = len(geom.coords)
+        elif geom.geom_type == 'MultiPoint':
+            num_points = len(geom.geoms)
+        elif geom.geom_type == 'MultiLineString':
+            num_points = sum(len(line.coords) for line in geom.geoms)
+        elif geom.geom_type == 'Polygon':
+            num_points = len(geom.exterior.coords)
+        elif geom.geom_type == 'MultiPolygon':
+            num_points = sum(len(poly.exterior.coords) for poly in geom.geoms)
+        else:
+            num_points = 0
+            
+        return geom, geom.geom_type, num_points
+    except:
+        return None, None, 0
+
+
+def calculate_distance(geom):
+    """
+    Calculate total distance/perimeter for a geometry to estimate construction footage.
+
+    Parameters:
+    -----------
+    geom : shapely.geometry
+        Shapely geometry object
+        
+    Returns:
+    --------
+    float
+        Total distance in feet
+    """
+    if geom is None:
+        return None
+    
+    try:
+        if geom.geom_type == 'Point':
+            return 0.0
+        elif geom.geom_type == 'LineString':
+            return geom.length
+        elif geom.geom_type == 'MultiLineString':
+            return sum(line.length for line in geom.geoms)
+        elif geom.geom_type == 'MultiPoint':
+            return 0.0
+        elif geom.geom_type == 'Polygon':
+            return geom.length  # Perimeter
+        elif geom.geom_type == 'MultiPolygon':
+            return sum(poly.length for poly in geom.geoms)
+    except:
+        return None
+    
+    return None
