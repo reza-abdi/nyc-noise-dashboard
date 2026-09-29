@@ -236,3 +236,324 @@ def calculate_distance(geom):
         return None
     
     return None
+
+
+def find_cd_by_intersection_length(geom, cd_gdf, use_nearest_fallback=True, max_distance=500, 
+                                   debug_index=None, borough_id=None):
+    
+    """
+    Find community district for each construction geometry using geometric intersection length.
+
+    Uses spatial index for efficient querying and suppresses Shapely RuntimeWarnings during 
+    intersection. Includes borough-aware prioritization for boundary cases.
+
+    Parameters:
+    -----------
+    geom : shapely.geometry
+        Shapely geometry object (in EPSG:2263)
+    cd_gdf : geopandas.GeoDataFrame
+        GeoDataFrame with exploded community district boundaries (in EPSG:2263)
+    use_nearest_fallback : bool
+        If True, use nearest CD for points outside boundaries
+    max_distance : float
+        Maximum distance in feet to search for nearest CD
+    debug_index : int, optional
+        DataFrame index for debug logging (internal use)
+    borough_id : int
+        Borough ID (1-5) to prioritize CDs from that borough
+
+    Returns:
+    --------
+    str or None
+        CD distribution string (e.g., "101:0.66,103:0.34") or None if no match found
+    """
+
+    if geom is None or geom.is_empty:
+        return None
+
+    if not geom.is_valid:
+        try:
+            geom = geom.buffer(0)
+            if geom is None or geom.is_empty or not geom.is_valid:
+                return None
+        except Exception:
+            return None
+
+    try:
+        # Logic for Points and MultiPoints
+        if geom.geom_type == 'Point':
+             with warnings.catch_warnings():
+                 warnings.filterwarnings("ignore", category=RuntimeWarning, module='shapely.predicates|shapely.set_operations')
+                 warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
+
+                 possible_matches_idx = list(cd_gdf.sindex.query(geom, predicate='contains'))
+                 if not possible_matches_idx:
+                     possible_matches_idx = list(cd_gdf.sindex.query(geom, predicate='intersects'))
+
+             if possible_matches_idx:
+                cds = cd_gdf.loc[possible_matches_idx]
+                
+                # Prioritize by borough if specified
+                if borough_id is not None:
+                    borough_matches = cds[cds['BoroCD'] // 100 == borough_id]
+                    if len(borough_matches) > 0:
+                        cd = int(borough_matches.iloc[0]['BoroCD'])
+                        return f"{cd}:1.00"
+                
+                # Fall back to first match if no borough match
+                cd = int(cds.iloc[0]['BoroCD'])
+                return f"{cd}:1.00"
+
+             if use_nearest_fallback:
+                 distances = cd_gdf.geometry.distance(geom)
+                 
+                 # Filter by borough if specified
+                 if borough_id is not None:
+                     borough_mask = cd_gdf['BoroCD'] // 100 == borough_id
+                     borough_distances = distances[borough_mask]
+                     if len(borough_distances) > 0:
+                         nearest_idx = borough_distances.idxmin()
+                         nearest_distance = borough_distances[nearest_idx]
+                         if nearest_distance <= max_distance:
+                             cd = int(cd_gdf.loc[nearest_idx, 'BoroCD'])
+                             return f"{cd}:1.00"
+                 
+                 # Fall back to any borough
+                 nearest_idx = distances.idxmin()
+                 nearest_distance = distances[nearest_idx]
+                 if nearest_distance <= max_distance:
+                     cd = int(cd_gdf.loc[nearest_idx, 'BoroCD'])
+                     return f"{cd}:1.00"
+             return None
+
+        if geom.geom_type == 'MultiPoint':
+            geom_centroid = geom.centroid
+            if geom_centroid.is_empty: return None
+            return find_cd_by_intersection_length(geom_centroid, cd_gdf, 
+                                                 use_nearest_fallback, max_distance,
+                                                 debug_index, borough_id)
+
+        # Logic for Polygons and MultiPolygons
+        if geom.geom_type in ['Polygon', 'MultiPolygon']:
+            intersectable_geom = geom.boundary
+        else:
+            intersectable_geom = geom
+
+        if intersectable_geom is None or intersectable_geom.is_empty:
+            geom_centroid = geom.centroid
+            if geom_centroid.is_empty: return None
+            return find_cd_by_intersection_length(geom_centroid, cd_gdf, 
+                                                 use_nearest_fallback, max_distance,
+                                                 debug_index, borough_id)
+
+        if not intersectable_geom.is_valid:
+             try:
+                 intersectable_geom = intersectable_geom.buffer(0)
+                 if intersectable_geom is None or intersectable_geom.is_empty or not intersectable_geom.is_valid:
+                     geom_centroid = geom.centroid
+                     if geom_centroid.is_empty: return None
+                     return find_cd_by_intersection_length(geom_centroid, cd_gdf, 
+                                                          use_nearest_fallback, max_distance,
+                                                          debug_index, borough_id)
+             except Exception:
+                 geom_centroid = geom.centroid
+                 if geom_centroid.is_empty: return None
+                 return find_cd_by_intersection_length(geom_centroid, cd_gdf, 
+                                                      use_nearest_fallback, max_distance,
+                                                      debug_index, borough_id)
+
+        total_length = intersectable_geom.length
+        if total_length < 1e-6:
+            geom_centroid = geom.centroid
+            if geom_centroid.is_empty: return None
+            return find_cd_by_intersection_length(geom_centroid, cd_gdf, 
+                                                 use_nearest_fallback, max_distance,
+                                                 debug_index, borough_id)
+
+        cd_lengths = {}
+        possible_matches_idx = []
+        
+        # Use Spatial Index with Warning Suppression
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=RuntimeWarning, module='shapely.predicates|shapely.set_operations')
+            warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
+            try:
+                possible_matches_idx = list(cd_gdf.sindex.query(geom, predicate='intersects'))
+            except Exception:
+                try:
+                    possible_matches_idx = list(cd_gdf.sindex.query(intersectable_geom, predicate='intersects'))
+                except Exception:
+                    possible_matches_idx = []
+
+        if not possible_matches_idx:
+            if use_nearest_fallback:
+                try:
+                    distances = cd_gdf.geometry.distance(geom)
+                    
+                    # Prioritize by borough if specified
+                    if borough_id is not None:
+                        borough_mask = cd_gdf['BoroCD'] // 100 == borough_id
+                        borough_distances = distances[borough_mask]
+                        if len(borough_distances) > 0:
+                            nearest_idx = borough_distances.idxmin()
+                            nearest_distance = borough_distances[nearest_idx]
+                            if nearest_distance <= max_distance:
+                                cd = int(cd_gdf.loc[nearest_idx, 'BoroCD'])
+                                return f"{cd}:1.00"
+                    
+                    # Fall back to any borough
+                    nearest_idx = distances.idxmin()
+                    nearest_distance = distances[nearest_idx]
+                    if nearest_distance <= max_distance:
+                        cd = int(cd_gdf.loc[nearest_idx, 'BoroCD'])
+                        return f"{cd}:1.00"
+                except Exception:
+                    pass
+            return None
+
+        potential_cds = cd_gdf.loc[possible_matches_idx]
+        
+        # Filter by borough FIRST if specified
+        if borough_id is not None:
+            borough_potential = potential_cds[potential_cds['BoroCD'] // 100 == borough_id]
+            # If we have candidates in the target borough, use only those
+            if len(borough_potential) > 0:
+                potential_cds = borough_potential
+
+        # Calculate Intersection Length with Warning Suppression
+        for idx, cd_row in potential_cds.iterrows():
+            try:
+                cd_geom = cd_row.geometry
+
+                if not intersectable_geom.is_valid:
+                     intersectable_geom = intersectable_geom.buffer(0)
+                     if intersectable_geom.is_empty: continue
+
+                intersection = None
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore", category=RuntimeWarning, module='shapely.set_operations')
+                    warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
+                    intersection = intersectable_geom.intersection(cd_geom)
+
+                if intersection is None or intersection.is_empty:
+                    continue
+
+                intersect_length = 0.0
+                if intersection.geom_type in ['LineString', 'MultiLineString']:
+                    intersect_length = intersection.length
+                elif intersection.geom_type == 'Point':
+                    intersect_length = 0.1
+                elif intersection.geom_type == 'MultiPoint':
+                    intersect_length = len(intersection.geoms) * 0.1
+                elif intersection.geom_type == 'GeometryCollection':
+                    for g in intersection.geoms:
+                        if g.geom_type in ['LineString', 'MultiLineString']:
+                            intersect_length += g.length
+                        elif g.geom_type in ['Point', 'MultiPoint']:
+                            intersect_length += 0.1 * (len(g.geoms) if g.geom_type == 'MultiPoint' else 1)
+
+                if intersect_length > 1e-6:
+                    cd = int(cd_row['BoroCD'])
+                    cd_lengths[cd] = cd_lengths.get(cd, 0) + intersect_length
+
+            except Exception:
+                continue
+
+        # Final Processing with Borough Prioritization
+        if not cd_lengths:
+            if use_nearest_fallback:
+                try:
+                    distances = cd_gdf.geometry.distance(geom)
+                    
+                    # Prioritize by borough if specified
+                    if borough_id is not None:
+                        borough_mask = cd_gdf['BoroCD'] // 100 == borough_id
+                        borough_distances = distances[borough_mask]
+                        if len(borough_distances) > 0:
+                            nearest_idx = borough_distances.idxmin()
+                            nearest_distance = borough_distances[nearest_idx]
+                            if nearest_distance <= max_distance:
+                                cd = int(cd_gdf.loc[nearest_idx, 'BoroCD'])
+                                return f"{cd}:1.00"
+                    
+                    # Fall back to any borough
+                    nearest_idx = distances.idxmin()
+                    nearest_distance = distances[nearest_idx]
+                    if nearest_distance <= max_distance:
+                        cd = int(cd_gdf.loc[nearest_idx, 'BoroCD'])
+                        return f"{cd}:1.00"
+                except Exception:
+                    pass
+            return None
+
+        # Apply borough prioritization to intersection results
+        if borough_id is not None:
+            # Separate CDs by borough match
+            borough_cds = {cd: length for cd, length in cd_lengths.items() 
+                          if cd // 100 == borough_id}
+            other_cds = {cd: length for cd, length in cd_lengths.items() 
+                        if cd // 100 != borough_id}
+            
+            # If there are CDs in the target borough, strongly prioritize them
+            if borough_cds:
+                
+                cd_lengths = borough_cds
+            else:
+                pass
+
+        total_intersect_length = sum(cd_lengths.values())
+        if total_intersect_length < 1e-6:
+            if use_nearest_fallback:
+                try:
+                    distances = cd_gdf.geometry.distance(geom)
+                    
+                    if borough_id is not None:
+                        borough_mask = cd_gdf['BoroCD'] // 100 == borough_id
+                        borough_distances = distances[borough_mask]
+                        if len(borough_distances) > 0:
+                            nearest_idx = borough_distances.idxmin()
+                            nearest_distance = borough_distances[nearest_idx]
+                            if nearest_distance <= max_distance:
+                                cd = int(cd_gdf.loc[nearest_idx, 'BoroCD'])
+                                return f"{cd}:1.00"
+                    
+                    nearest_idx = distances.idxmin()
+                    nearest_distance = distances[nearest_idx]
+                    if nearest_distance <= max_distance:
+                        cd = int(cd_gdf.loc[nearest_idx, 'BoroCD'])
+                        return f"{cd}:1.00"
+                except Exception:
+                    pass
+            return None
+
+        sorted_cds = sorted(cd_lengths.items(), key=lambda item: (-item[1], item[0]))
+        cd_dist_parts = []
+        for i, (cd, length) in enumerate(sorted_cds):
+            proportion = length / total_intersect_length
+            if len(sorted_cds) == 1:
+                 cd_dist_parts.append(f"{cd}:1.00")
+                 break
+            if proportion >= 0.005 or i == 0:
+                 cd_dist_parts.append(f"{cd}:{proportion:.2f}")
+
+        # Renormalize proportions if small ones were dropped
+        if len(cd_dist_parts) > 1:
+            temp_props = {}
+            total_prop = 0.0
+            for part in cd_dist_parts:
+                cd_str, prop_str = part.split(':')
+                prop = float(prop_str)
+                temp_props[int(cd_str)] = prop
+                total_prop += prop
+
+            if total_prop > 0 and abs(total_prop - 1.0) > 0.01:
+                cd_dist_parts = []
+                for cd in sorted(temp_props.keys()):
+                    norm_prop = temp_props[cd] / total_prop
+                    cd_dist_parts.append(f"{cd}:{norm_prop:.2f}")
+
+        if not cd_dist_parts: return None
+        return ",".join(cd_dist_parts)
+
+    except Exception:
+        return None
