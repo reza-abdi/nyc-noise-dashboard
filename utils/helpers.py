@@ -195,3 +195,82 @@ def validate_cleaned_data(df):
     #     print(f"  {col}: {dtype}")
     
     return validation_results
+
+
+
+def plot_stacked_bar(df, year_col, category_col, title, top_n=5, 
+                     label_map=None, color_map=None, figsize=(14, 8)):
+    """
+    Create a stacked bar chart showing year-over-year breakdown by category.
+    
+    Parameters:
+    -----------
+    df : DataFrame
+        Input dataframe
+    year_col : str
+        Column name containing year data (will extract year only)
+    category_col : str
+        Column name for categories to stack (e.g., 'permittypeid' or 'primary_cd')
+    title : str
+        Chart title
+    top_n : int
+        Number of top categories to show (default: 5). Others grouped as 'Other'
+    label_map : dict, optional
+        Dictionary mapping category IDs to readable names for legend
+    color_map : list, optional
+        List of colors for mapping categories
+    figsize : tuple
+        Figure size (width, height)
+    """
+    
+    df_plot = df.copy()
+    
+    # Extract year only from year_col
+    df_plot['year_only'] = pd.to_datetime(df_plot[year_col]).dt.year
+    
+    # Get top N categories by total count
+    top_categories = df_plot[category_col].value_counts().head(top_n).index.tolist()
+    
+    # Create grouped category column
+    df_plot['category_grouped'] = df_plot[category_col].apply(
+        lambda x: x if x in top_categories else 'Others'
+    )
+    
+    # Group and pivot for stacked bar
+    grouped = df_plot.groupby(['year_only', 'category_grouped']).size().unstack(fill_value=0)
+    
+    # Reorder columns: top categories first, then 'Others'
+    if 'Others' in grouped.columns:
+        cols_order = [c for c in top_categories if c in grouped.columns] + ['Others']
+    else:
+        cols_order = [c for c in top_categories if c in grouped.columns]
+    grouped = grouped[cols_order]
+    
+    # Apply label mapping to column names if provided
+    if label_map:
+        grouped.columns = [label_map.get(col, col) for col in grouped.columns]
+    
+    # Create figure
+    fig, ax = plt.subplots(figsize=figsize)
+    
+    # Generate colors
+    if color_map is None:
+        colors = plt.cm.tab10(range(len(grouped.columns)))
+    else:
+        colors = color_map
+    
+    # Create stacked bar chart
+    grouped.plot(kind='bar', stacked=True, ax=ax, color=colors, 
+                 edgecolor='white', linewidth=0.5)
+    
+    # Styling
+    ax.set_title(title, fontsize=16, fontweight='bold', pad=20)
+    ax.set_xlabel('Year', fontsize=12)
+    ax.set_ylabel('Count', fontsize=12)
+    ax.legend(title=f'Top {top_n} {category_col}', bbox_to_anchor=(1.05, 1), 
+              loc='upper left', fontsize=9)
+    ax.grid(axis='y', linestyle='--', alpha=0.6)
+    ax.set_xticklabels(grouped.index, rotation=45, ha='right')
+    
+    plt.tight_layout()
+    return fig, ax
