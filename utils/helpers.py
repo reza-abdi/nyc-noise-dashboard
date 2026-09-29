@@ -116,3 +116,82 @@ def convert_to_year_month(df, date_columns=None):
             print(f"Warning: Column '{col}' not found in dataframe")
     
     return df_copy
+
+def clean_permit_data(df, check_columns = ['permitnumber','issuedworkstartdate', 'issuedworkenddate']):
+    """
+    Complete cleaning pipeline for Street Construction Permits data.
+    Applies all cleaning steps in sequence.
+    
+    Parameters:
+    -----------
+    df : pandas.DataFrame
+        Raw permit data
+    check_columns: list, optional
+        List of column names to check for NA values.
+        Default checks: 'permitnumber','issuedworkstartdate', 'issuedworkenddate'
+    
+    Returns:
+    --------
+    pandas.DataFrame
+        Cleaned dataframe
+    """
+    
+    df_cleaned = remove_rows_with_na(df)
+    
+    df_cleaned = convert_to_year_month(df_cleaned)
+    
+    # Remove for duplicates
+    df_cleaned = df_cleaned.drop_duplicates(subset=check_columns, keep='first')
+        
+
+
+    df_cleaned = df_cleaned.astype({'permitnumber': str,
+                                    'permitteename': str,
+                                    'boroughname': str})
+    print(f"Cleaned dataset shape: {df_cleaned.shape}")
+
+    return df_cleaned
+
+
+def validate_cleaned_data(df):
+    """
+    Validate the cleaned data to ensure cleaning was successful.
+    
+    Parameters:
+    -----------
+    df : pandas.DataFrame
+        Cleaned dataframe to validate
+    
+    Returns:
+    --------
+    dict
+        Dictionary containing validation results
+    """
+    validation_results = {
+        'total_rows': len(df),
+        'total_columns': len(df.columns),
+        'missing_values': df.isnull().sum().to_dict(),
+        'date_columns_type': {}
+    }
+    
+    # Check date column types
+    for col in ['issuedworkstartdate', 'issuedworkenddate']:
+        if col in df.columns:
+            validation_results['date_columns_type'][col] = str(df[col].dtype)
+    
+    # print("\n" + "="*60)
+    # print("Validation Results")
+    # print(f"Total rows: {validation_results['total_rows']}")
+    # print(f"Total columns: {validation_results['total_columns']}")
+    # print(f"\n Missing values per column:")
+    # for col, count in validation_results['missing_values'].items():
+    #     if count > 0:
+    #         print(f"  {col}: {count}")
+    if sum(validation_results['missing_values'].values()) == 0:
+        print("No missing values found")
+    
+    # print(f"\nDate column types:")
+    # for col, dtype in validation_results['date_columns_type'].items():
+    #     print(f"  {col}: {dtype}")
+    
+    return validation_results
