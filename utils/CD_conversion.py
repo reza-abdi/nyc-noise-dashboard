@@ -557,3 +557,58 @@ def find_cd_by_intersection_length(geom, cd_gdf, use_nearest_fallback=True, max_
 
     except Exception:
         return None
+
+
+def bulk_find_cds_by_length(geometries_with_index, cd_gdf, batch_size=1000,
+                            use_nearest_fallback=True, max_distance=500, 
+                            borough_ids=None, verbose=False):
+    """
+    Find community districts for multiple geometries using intersection length. 
+    Processes in batches to show progress and improve performance.
+
+    Parameters:
+    -----------
+    geometries_with_index : list of tuple
+        List of (index, geometry) tuples
+    cd_gdf : geopandas.GeoDataFrame
+        GeoDataFrame with community district boundaries
+    batch_size : int
+        Number of geometries to process before showing progress
+    use_nearest_fallback : bool
+        If True, use nearest CD for geometries outside boundaries
+    max_distance : float
+        Maximum distance in feet for nearest fallback
+    borough_ids : list of int or None
+        List of borough IDs corresponding to each geometry, or None
+    verbose : bool
+        Show progress messages
+        
+    Returns:
+    --------
+    list of str
+        CD distribution strings for each geometry
+    """
+
+    results = []
+    total = len(geometries_with_index)
+    
+    for i in range(0, total, batch_size):
+        batch = geometries_with_index[i:i+batch_size] 
+        
+        for idx, geom in batch:
+            borough_id = None
+            if borough_ids is not None and idx < len(borough_ids):
+                borough_id = borough_ids[idx]
+                
+            cd_dist = find_cd_by_intersection_length(
+                geom, cd_gdf, 
+                use_nearest_fallback, max_distance,
+                debug_index=idx, borough_id=borough_id
+            )
+            results.append(cd_dist)
+        
+        if verbose and (i + batch_size) % (batch_size * 10) == 0:
+            processed = min(i + batch_size, total)
+            print(f"  Processed {processed:,}/{total:,} geometries ({100*processed/total:.1f}%)")
+    
+    return results
