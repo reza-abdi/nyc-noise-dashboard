@@ -612,3 +612,283 @@ def bulk_find_cds_by_length(geometries_with_index, cd_gdf, batch_size=1000,
             print(f"  Processed {processed:,}/{total:,} geometries ({100*processed/total:.1f}%)")
     
     return results
+
+
+def parse_cd_distribution(cd_dist_str):
+    """Parse CD distribution string into a dictionary."""
+    
+    if pd.isna(cd_dist_str) or cd_dist_str is None:
+        return {}
+    try:
+        result = {}
+        parts = cd_dist_str.split(',')
+        for part in parts:
+            cd, prop = part.split(':')
+            result[int(cd)] = float(prop)
+        return result
+    except:
+        return {}
+
+
+def get_primary_cd(cd_dict):
+    """Get CD with highest proportion."""
+    if not cd_dict:
+        return None
+    return int(max(cd_dict.items(), key=lambda x: x[1])[0])
+
+
+def add_community_districts(df, wkt_column='wkt', borough_column='boroughname',
+                           cache_file='data/NYC_DCP_GeoJSON.geojson', verbose=False,
+                           include_sparse_columns=False, batch_size=5000,
+                           use_nearest_fallback=True, max_distance=500,
+                           diagnose_unmatched=True):
+
+    """
+    Add community district information to DataFrame based on WKT geometries.
+
+    Uses geometric intersection length for accurate calculation with borough prioritization for boundary cases.
+
+    IMPORTANT: All WKT geometries must be in EPSG:2263 (NY Long Island State Plane, FIPS 3104)
+
+    Parameters:
+    -----------
+    df : pandas.DataFrame
+        DataFrame with WKT geometry column (in EPSG:2263)
+    wkt_column : str
+        Name of column containing WKT geometry strings
+    borough_column : str
+        Name of column containing borough names (e.g., 'MANHATTAN', 'BRONX')
+    cache_file : str
+        Path to cache the CD GeoJSON data
+    verbose : bool
+        Print progress messages
+    include_sparse_columns : bool
+        If True, create individual cd_XXX_portion columns
+    batch_size : int, default 5000
+        Number of rows to process before showing progress
+    use_nearest_fallback : bool, default True
+        Assign nearest CD to geometries outside boundaries
+    max_distance : float, default 500
+        Maximum distance in feet for nearest fallback
+    diagnose_unmatched : bool, default True
+        Print diagnosis info for unmatched geometries
+        
+    Returns:
+    --------
+    pandas.DataFrame
+        Input DataFrame with added columns:
+        - geom_type: Type of geometry
+        - num_points: Number of points in geometry
+        - est_distance: Total distance/perimeter in feet
+        - cd_wkt_string: String representation of CD distribution
+        - cd_wkt_dict: Dictionary of CD proportions
+        - primary_cd: CD with highest proportion
+        - cd_{XXX}_portion: Individual columns (only if include_sparse_columns=True)
+    """
+    df = df.copy()
+
+    if wkt_column not in df.columns:
+        raise ValueError(f"Column '{wkt_column}' not found in DataFrame")
+
+    # Download/load community district data
+    cd_gdf = download_cd_geodata(cache_file)
+
+    if verbose:
+        print(f"\nIMPORTANT: Input WKT assumed to be EPSG:2263 (NY Long Island State Plane)")
+        if borough_column in df.columns:
+            print(f"Using borough column '{borough_column}' for boundary prioritization")
+
+    # Extract geometries and info from WKT
+    if verbose: print("\nParsing WKT geometries (assuming EPSG:2263)...")
+
+    geom_info = df[wkt_column].apply(extract_geometry_info)
+    df['geometry'] = geom_info.apply(lambda x: x[0])
+    df['geom_type'] = geom_info.apply(lambda x: x[1])
+    df['num_points'] = geom_info.apply(lambda x: x[2])
+    
+    if verbose:
+        print(f"Parsed {df['geometry'].notna().sum():,} geometries")
+        geom_type_counts = df['geom_type'].value_counts()
+        for geom_type, count in geom_type_counts.items():
+            print(f"  - {geom_type}: {count:,}")
+    
+    # Calculate distances
+    if verbose:
+        print("\nCalculating distances/perimeters...")
+    
+    df['est_distance'] = df['geometry'].apply(calculate_distance)
+    
+    if verbose:
+        distance_stats = df['est_distance'].dropna().describe()
+        print(f"Distance statistics:")
+        print(f"  Mean: {distance_stats['mean']:.2f} feet")
+        print(f"  Median: {distance_stats['50%']:.2f} feet")
+        print(f"  Max: {distance_stats['max']:.2f} feet")
+    
+    # Extract borough IDs for prioritization
+    borough_ids = None
+    if borough_column in df.columns:
+        if verbose:
+            print(f"\nExtracting borough IDs from '{borough_column}' column...")
+        borough_ids = df[borough_column].apply(get_borough_id).tolist()
+        
+        if verbose:
+            borough_counts = df[borough_column].value_counts()
+            print(f"Borough distribution:")
+            for boro, count in borough_counts.items():
+                boro_id = get_borough_id(boro)
+                print(f"  - {boro} (ID: {boro_id}): {count:,}")
+    
+    # Diagnose coordinate ranges
+    if verbose and diagnose_unmatched:
+        print("\nDiagnosing coordinate ranges...")
+        valid_geoms = df[df['geometry'].notna()]
+        
+        if len(valid_geoms) > 0:
+            sample_size = min(1000, len(valid_geoms))
+            sample_geoms = valid_geoms['geometry'].sample(n=sample_size, random_state=42)
+            
+            x_coords = []
+            y_coords = []
+            
+            for geom in sample_geoms:
+                try:
+                    if geom.geom_type == 'Point':
+                        x_coords.append(geom.x)
+                        y_coords.append(geom.y)
+                    elif geom.geom_type == 'LineString':
+                        coords = list(geom.coords)[:5]
+                        x_coords.extend([c[0] for c in coords])
+                        y_coords.extend([c[1] for c in coords])
+                except:
+                    continue
+            
+            if x_coords and y_coords:
+                print(f"\nSample coordinate ranges:")
+                print(f"  X: {min(x_coords):.2f} to {max(x_coords):.2f}")
+                print(f"  Y: {min(y_coords):.2f} to {max(y_coords):.2f}")
+                print(f"\nExpected for EPSG:2263 (NY State Plane):")
+                print(f"  X: ~900,000 to ~1,100,000")
+                print(f"  Y: ~100,000 to ~300,000")
+                
+                avg_x = sum(x_coords) / len(x_coords)
+                avg_y = sum(y_coords) / len(y_coords)
+                
+                if not (900000 <= avg_x <= 1100000 and 100000 <= avg_y <= 300000):
+                    print(f"\n⚠️  WARNING: Coordinates don't match EPSG:2263!")
+                    print(f"   Your data might be in a different CRS.")
+                    if abs(avg_x) < 200 and abs(avg_y) < 100:
+                        print(f"   Looks like lat/lon (EPSG:4326) - need to convert!")
+    
+    if verbose:
+        print("\nFinding community districts (intersection length method with borough prioritization)...")
+        if use_nearest_fallback:
+            print(f"Using nearest CD fallback (max distance: {max_distance} feet)")
+        print(f"Processing {len(df):,} geometries...")
+    
+    geometries_with_index = list(zip(df.index, df['geometry'].tolist()))
+    cd_distributions = bulk_find_cds_by_length(
+        geometries_with_index, cd_gdf, batch_size, 
+        use_nearest_fallback, max_distance, 
+        borough_ids, verbose
+    )
+    
+    df['cd_wkt_string'] = cd_distributions
+    
+    if verbose:
+        print(f"Completed CD assignment")
+    
+    # Parse CD distributions
+    df['cd_wkt_dict'] = df['cd_wkt_string'].apply(parse_cd_distribution)
+    df['primary_cd'] = df['cd_wkt_dict'].apply(get_primary_cd)
+    
+    # Create individual CD columns if needed
+    if include_sparse_columns:
+        all_cds = set()
+        for cd_dict in df['cd_wkt_dict']:
+            all_cds.update(cd_dict.keys())
+        
+        for cd in sorted(all_cds):
+            col_name = f'cd_{cd}_portion'
+            df[col_name] = df['cd_wkt_dict'].apply(lambda x: x.get(cd, 0.0))
+        
+        if verbose:
+            print(f"\nCreated {len(all_cds)} CD portion columns")
+    
+    if verbose:
+        print("\n" + "="*60)
+        print("SUMMARY")
+        print("="*60)
+        matched = df['cd_wkt_string'].notna().sum()
+        total_valid = df[wkt_column].notna().sum()
+        
+        print(f"Rows with CD assigned: {matched:,}")
+        if total_valid > 0:
+            match_rate = matched / total_valid * 100
+            print(f"Match rate: {match_rate:.1f}%")
+            
+            unmatched_count = total_valid - matched
+            if unmatched_count > 0:
+                print(f"\n {unmatched_count:,} geometries could not be matched to a CD")
+                print(f"   This usually means they are outside NYC boundaries or have the wrong CRS.")
+                if not use_nearest_fallback:
+                    print(f"   Try setting use_nearest_fallback=True")
+        
+        multi_cd = df[df['cd_wkt_string'].notna() & 
+                     df['cd_wkt_string'].str.contains(',')]
+        if len(multi_cd) > 0:
+            print(f"\nGeometries spanning multiple CDs: {len(multi_cd):,}")
+            print(f"  ({100*len(multi_cd)/matched:.1f}% of matched geometries)")
+        
+        print("\nTop 10 Primary Community Districts:")
+
+        if matched > 0:
+            cd_dist = df['primary_cd'].value_counts().head(10)
+            for cd, count in cd_dist.items():
+                borough_id = cd // 100
+                borough_name = [k for k, v in BOROUGH_IDS.items() if v == borough_id][0]
+                cd_num = cd % 100
+                print(f" CD {cd} ({borough_name} {cd_num:02d}): {count:,} ({100*count/matched:.1f}%)")
+        else:
+            print("No geometries were matched to any CD.")
+        
+        # Borough match analysis
+        if borough_column in df.columns and matched > 0:
+            print("\nBorough Match Analysis:")
+            df_matched = df[df['primary_cd'].notna()].copy()
+            df_matched['assigned_borough'] = df_matched['primary_cd'].apply(lambda x: x // 100 if pd.notna(x) else None)
+            df_matched['input_borough_id'] = df_matched[borough_column].apply(get_borough_id)
+            
+            borough_match = (df_matched['assigned_borough'] == df_matched['input_borough_id']).sum()
+            print(f"  Geometries matched to correct borough: {borough_match:,} ({100*borough_match/len(df_matched):.1f}%)")
+    
+    # Fix data types, use original data 'permitlinearfeet' if available or estimated construction footage, clean up columns 
+
+    df['primary_cd'] = df['primary_cd'].astype(str).str.replace(r'\.0$', '', regex=True)
+
+    df['est_distance'] = np.where(df['permitlinearfeet'].notna(),
+                                  df['permitlinearfeet'],
+                                  df['est_distance'])
+    
+    df = df.drop(columns=['geom_type', 'num_points', 'cd_wkt_string', 'permitlinearfeet', 'geometry'])
+    
+    return df
+
+
+def get_first_coordinate(wkt_str):
+    try:
+        geom = wkt.loads(wkt_str)
+        if geom.geom_type == 'Point':
+            return geom.x, geom.y
+        elif geom.geom_type in ['LineString', 'LinearRing']:
+            return geom.coords[0]
+        elif geom.geom_type.startswith('Multi') or geom.geom_type == 'GeometryCollection':
+            # Take first sub-geometry’s first coordinate
+            for g in geom.geoms:
+                if hasattr(g, 'coords'):
+                    return g.coords[0]
+            return None
+        else:
+            return None
+    except Exception:
+        return None
