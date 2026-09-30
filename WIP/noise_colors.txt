@@ -1,0 +1,14 @@
+# 11 hex codes for noise 311 complaints theme
+noise_colors = [
+    '#FF0000',  # Loud red (sirens, alarms)
+    '#FF4500',  # Orange red (construction)
+    '#FF6347',  # Tomato (street noise)
+    '#FF8C00',  # Dark orange (traffic)
+    '#FFA500',  # Orange (horns)
+    '#FFD700',  # Gold (transition)
+    '#87CEEB',  # Sky blue (quieter)
+    '#4682B4',  # Steel blue (calm)
+    '#5F9EA0',  # Cadet blue (peaceful)
+    '#708090',  # Slate gray (quiet)
+    '#2F4F4F'   # Dark slate gray (silence)
+]
